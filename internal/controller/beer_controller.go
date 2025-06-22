@@ -129,3 +129,5 @@ func (o *BeerController) DeleteBeer(c *gin.Context) {
 		"status": "beer delete",
 	})
 }
+
+//

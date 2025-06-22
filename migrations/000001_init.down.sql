@@ -2,3 +2,4 @@ DROP TABLE IF EXISTS user_beer_ratings;
 DROP TABLE IF EXISTS beers_types;
 DROP TABLE IF EXISTS breweries;
 DROP TABLE IF EXISTS users;
+--

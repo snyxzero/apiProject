@@ -6,3 +6,5 @@ type UserBeerRating struct {
 	Beer   int
 	Rating int
 }
+
+//

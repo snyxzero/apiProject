@@ -125,3 +125,5 @@ func (uc *BreweryController) DeleteBrewery(c *gin.Context) {
 		"status": "brewery delete",
 	})
 }
+
+//
