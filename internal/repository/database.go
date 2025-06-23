@@ -25,3 +25,5 @@ func (db *Database) Close() {
 func (db *Database) Pool() *pgxpool.Pool {
 	return db.pool
 }
+
+//

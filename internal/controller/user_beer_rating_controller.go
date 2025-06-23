@@ -130,3 +130,5 @@ func (o *RatingController) DeleteRating(c *gin.Context) {
 		"status": "success",
 	})
 }
+
+//

@@ -47,3 +47,5 @@ func (o *BreweryRepository) DeleteBrewery(ctx context.Context, id int) error {
 	}
 	return nil
 }
+
+//

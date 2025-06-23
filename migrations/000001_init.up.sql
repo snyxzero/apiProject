@@ -43,4 +43,4 @@ COMMENT ON COLUMN user_beer_ratings.user_id IS 'Идентификатор по�
 COMMENT ON COLUMN user_beer_ratings.beer_id IS 'Идентификатор сорта пива, который оценили';
 COMMENT ON COLUMN user_beer_ratings.rating IS 'Оценка от 1 до 5';
 COMMENT ON CONSTRAINT unique_user_beer_rating ON user_beer_ratings IS 'Обеспечивает уникальность оценки пользователя для конкретного сорта пива';
-
+--

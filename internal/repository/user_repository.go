@@ -47,3 +47,5 @@ func (o *UserRepository) DeleteUser(c *gin.Context, id int) error {
 	}
 	return nil
 }
+
+//

@@ -124,3 +124,5 @@ func (uc *UserController) DeleteUser(c *gin.Context) {
 		"status": "user delete",
 	})
 }
+
+//
