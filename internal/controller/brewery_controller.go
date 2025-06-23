@@ -1,12 +1,14 @@
 package controller
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/snyxzero/apiProject/internal/models"
-	"github.com/snyxzero/apiProject/internal/repository"
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
+
+	"github.com/snyxzero/apiProject/internal/models"
+	"github.com/snyxzero/apiProject/internal/repository"
 )
 
 type breweryClipboard struct {
@@ -58,7 +60,7 @@ func (uc *BreweryController) CreateBrewery(c *gin.Context) {
 		c.Status(http.StatusBadRequest)
 		return
 	}
-	user := models.Brewery{
+	user := models.Brewery{ // название не user)
 		Name: breweryCb.Name,
 	}
 

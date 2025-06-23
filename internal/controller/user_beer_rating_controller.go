@@ -1,21 +1,24 @@
 package controller
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/snyxzero/apiProject/internal/models"
-	"github.com/snyxzero/apiProject/internal/repository"
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
+
+	"github.com/snyxzero/apiProject/internal/models"
+	"github.com/snyxzero/apiProject/internal/repository"
 )
 
 type ratingClipboard struct {
 	ID     int `json:"id"`
-	User   int `json:"user" binding:"required"`
+	User   int `json:"user" binding:"required"` // должно быть user_id и для пива так же
 	Beer   int `json:"beer" binding:"required"`
 	Rating int `json:"rating" binding:"required"`
 }
 
+// название должно совпадать полностью, для читаемости и понимамости, то есть UserBeerRatingCOntroller
 type RatingController struct {
 	repository *repository.UserBeerRatingRepository
 }

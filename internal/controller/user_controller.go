@@ -1,12 +1,14 @@
 package controller
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/snyxzero/apiProject/internal/models"
-	"github.com/snyxzero/apiProject/internal/repository"
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
+
+	"github.com/snyxzero/apiProject/internal/models"
+	"github.com/snyxzero/apiProject/internal/repository"
 )
 
 type userClipboard struct {
@@ -29,6 +31,12 @@ func (uc *UserController) GetUser(c *gin.Context) {
 	if err != nil {
 		log.Println(err)
 		c.Status(http.StatusBadRequest)
+		// нужно возвращать в чем проблема, особено в ошибке запросе
+		/*пример
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "User ID must be greater than zero.", ну или на русском пофиг
+		})*/
 		return
 	}
 	if id < 1 {
@@ -39,6 +47,11 @@ func (uc *UserController) GetUser(c *gin.Context) {
 	user, err := uc.repository.GetUser(c, id)
 	if err != nil {
 		log.Println(err)
+		// нужно разделение через error.Is на типы ошибок
+		// сейчас 2 типа
+		// 1 ошибка работы с бд
+		// 2 юзер не найден
+		// интернал еррор только если ошибка с бд
 		c.Status(http.StatusInternalServerError)
 		return
 	}
@@ -86,7 +99,7 @@ func (uc *UserController) UpdateUser(c *gin.Context) {
 	}
 
 	user := models.User{
-		Name: userCb.Name,
+		Name: userCb.Name, // нет айдишника, обновляем по имени, это не верно, имя не уникальное
 	}
 
 	err = uc.repository.UpdateUser(c, user)

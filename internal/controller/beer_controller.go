@@ -1,14 +1,31 @@
 package controller
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/snyxzero/apiProject/internal/models"
-	"github.com/snyxzero/apiProject/internal/repository"
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
+
+	"github.com/snyxzero/apiProject/internal/models"
+	"github.com/snyxzero/apiProject/internal/repository"
 )
 
+// нужно с большой буквы, чтобы импорт был
+// и надо название поменять
+// можно сделать структуры под каждое действие
+/*пример
+type CreateBeerRequest struct {
+	Name    string `json:"name" binding:"required"`
+	Brewery int    `json:"brewery" binding:"required"`
+}
+
+type UpdateBeerRequest struct {
+	ID      int    `json:"id" binding:"required"`
+	Name    string `json:"name" binding:"required"`
+	Brewery int    `json:"brewery" binding:"required"`
+}*/
+// ну или назвать BeerRequest или как то так
 type beerClipboard struct {
 	ID      int    `json:"id"`
 	Name    string `json:"name" binding:"required"`
@@ -60,7 +77,7 @@ func (o *BeerController) CreateBeer(c *gin.Context) {
 		return
 	}
 	beer := models.Beer{
-		ID:      beerCb.ID,
+		ID:      beerCb.ID, // айди не нужен, его бд добавит
 		Name:    beerCb.Name,
 		Brewery: beerCb.Brewery,
 	}
@@ -89,7 +106,7 @@ func (o *BeerController) UpdateBeer(c *gin.Context) {
 	}
 
 	beer := models.Beer{
-		ID:      beerCb.ID,
+		ID:      beerCb.ID, // айди может быть 0 и минусовым и тд, надо валидацию
 		Name:    beerCb.Name,
 		Brewery: beerCb.Brewery,
 	}

@@ -8,15 +8,16 @@ COMMENT ON COLUMN users.name IS 'Имя пользователя';
 
 CREATE TABLE breweries (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL
+    name VARCHAR(100) NOT NULL # давай сделаем уникальным, все же названия компании должно быть uniq
 );
 COMMENT ON TABLE breweries IS 'Таблица для хранения информации о пивоварнях';
 COMMENT ON COLUMN breweries.id IS 'Уникальный идентификатор пивоварни';
 COMMENT ON COLUMN breweries.name IS 'Название пивоварни';
 
+# на инглише последнее слово имеет множественый знак, то есть название должно быть beer_types, и мб логичнее даже сделать название beers
 CREATE TABLE beers_types (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
+    name VARCHAR(100) NOT NULL, # давай сделаем уникальным, все же названия пива должно быть uniq
     brewery_id INTEGER NOT NULL,
     CONSTRAINT fk_brewery
         FOREIGN KEY(brewery_id) REFERENCES breweries(id) ON DELETE CASCADE
@@ -29,7 +30,7 @@ COMMENT ON COLUMN beers_types.brewery_id IS 'Идентификатор пиво
 CREATE TABLE user_beer_ratings (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL,
-    beer_id INTEGER NOT NULL,
+    beer_id INTEGER NOT NULL, # нужно полностью отражать имя таблицы, явность это лучше и тут и в контстреинте должно быть beer_types_id
     rating SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
     CONSTRAINT fk_user
         FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
