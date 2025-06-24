@@ -1,52 +1,44 @@
 package controller
 
 import (
-	"log"
-	"net/http"
-	"strconv"
-
 	"github.com/gin-gonic/gin"
+	"github.com/snyxzero/apiProject/internal/errorcrud"
+	"net/http"
 
 	"github.com/snyxzero/apiProject/internal/models"
 	"github.com/snyxzero/apiProject/internal/repository"
 )
 
-type ratingClipboard struct {
+type RatingRequest struct {
 	ID     int `json:"id"`
-	User   int `json:"user" binding:"required"` // должно быть user_id и для пива так же
-	Beer   int `json:"beer" binding:"required"`
+	UserID int `json:"user_id" binding:"required"`
+	BeerID int `json:"beer_id" binding:"required"`
 	Rating int `json:"rating" binding:"required"`
 }
 
-// название должно совпадать полностью, для читаемости и понимамости, то есть UserBeerRatingCOntroller
-type RatingController struct {
-	repository *repository.UserBeerRatingRepository
+type UserBeerRatingController struct {
+	repository *repository.UserBeerRatingsRepository
 }
 
-func NewRatingController(repository *repository.UserBeerRatingRepository) *RatingController {
-	return &RatingController{
+func NewRatingController(repository *repository.UserBeerRatingsRepository) *UserBeerRatingController {
+	return &UserBeerRatingController{
 		repository: repository,
 	}
 }
 
-func (o *RatingController) GetRating(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
+func (o *UserBeerRatingController) GetRating(c *gin.Context) {
+	id, err := ValidID(c.Param("id"))
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusBadRequest)
+		errorcrud.ErrorCheck(c, err)
 		return
 	}
-	if id < 1 {
-		log.Println("incorrect id (id < 1)")
-		c.Status(http.StatusBadRequest)
-		return
-	}
+
 	userBeerRating, err := o.repository.GetRating(c, id)
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusInternalServerError)
+		errorcrud.ErrorCheck(c, err)
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
 		"rating": userBeerRating,
@@ -54,81 +46,79 @@ func (o *RatingController) GetRating(c *gin.Context) {
 	return
 }
 
-func (o *RatingController) CreateRating(c *gin.Context) {
-
-	var ratingCb ratingClipboard
-	err := c.ShouldBindJSON(&ratingCb)
+func (o *UserBeerRatingController) CreateRating(c *gin.Context) {
+	var userBeerRatingRq RatingRequest
+	err := c.ShouldBindJSON(&userBeerRatingRq)
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusBadRequest)
+		errorcrud.ErrInvalidJson(c, err)
 		return
 	}
-	rating := models.UserBeerRating{
-		User:   ratingCb.User,
-		Beer:   ratingCb.Beer,
-		Rating: ratingCb.Rating,
+
+	userBeerRating := models.UserBeerRating{
+		User:   userBeerRatingRq.UserID,
+		Beer:   userBeerRatingRq.BeerID,
+		Rating: userBeerRatingRq.Rating,
 	}
 
-	ratingCb.ID, err = o.repository.AddRating(c, rating)
+	userBeerRating, err = o.repository.AddRating(c, &userBeerRating)
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusInternalServerError)
+		errorcrud.ErrorCheck(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"rating": ratingCb,
+		"status":         "success",
+		"userBeerRating": userBeerRating,
 	})
 	return
 }
 
-func (o *RatingController) UpdateRating(c *gin.Context) {
-
-	var ratingCb ratingClipboard
-	err := c.ShouldBindJSON(&ratingCb)
+func (o *UserBeerRatingController) UpdateRating(c *gin.Context) {
+	id, err := ValidID(c.Param("id"))
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusBadRequest)
+		errorcrud.ErrorCheck(c, err)
 		return
 	}
 
-	rating := models.UserBeerRating{
-		User:   ratingCb.User,
-		Beer:   ratingCb.Beer,
-		Rating: ratingCb.Rating,
-	}
-
-	err = o.repository.UpdateRating(c, rating)
+	var userBeerRatingRq RatingRequest
+	err = c.ShouldBindJSON(&userBeerRatingRq)
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusInternalServerError)
+		errorcrud.ErrInvalidJson(c, err)
 		return
 	}
+
+	userBeerRating := models.UserBeerRating{
+		ID:     id,
+		User:   userBeerRatingRq.UserID,
+		Beer:   userBeerRatingRq.BeerID,
+		Rating: userBeerRatingRq.Rating,
+	}
+
+	userBeerRating, err = o.repository.UpdateRating(c, &userBeerRating)
+	if err != nil {
+		errorcrud.ErrorCheck(c, err)
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
-		"beer":   ratingCb,
+		"beer":   userBeerRating,
 	})
 	return
 }
 
-func (o *RatingController) DeleteRating(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
+func (o *UserBeerRatingController) DeleteRating(c *gin.Context) {
+	id, err := ValidID(c.Param("id"))
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusBadRequest)
+		errorcrud.ErrorCheck(c, err)
 		return
 	}
-	if id < 1 {
-		log.Println("incorrect id (id < 1)")
-		c.Status(http.StatusBadRequest)
-		return
-	}
+
 	err = o.repository.DeleteRating(c, id)
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusInternalServerError)
+		errorcrud.ErrorCheck(c, err)
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
 	})

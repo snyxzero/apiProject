@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"log"
+	"github.com/snyxzero/apiProject/internal/errorcrud"
 	"net/http"
 	"strconv"
 
@@ -11,55 +11,46 @@ import (
 	"github.com/snyxzero/apiProject/internal/repository"
 )
 
-// нужно с большой буквы, чтобы импорт был
-// и надо название поменять
-// можно сделать структуры под каждое действие
-/*пример
-type CreateBeerRequest struct {
-	Name    string `json:"name" binding:"required"`
-	Brewery int    `json:"brewery" binding:"required"`
+func ValidID(idParam string) (int, error) {
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		return 0, errorcrud.ErrInvalidFormat
+	}
+	if id < 1 {
+		return 0, errorcrud.ErrNegativeID
+	}
+	return id, nil
 }
 
-type UpdateBeerRequest struct {
-	ID      int    `json:"id" binding:"required"`
-	Name    string `json:"name" binding:"required"`
-	Brewery int    `json:"brewery" binding:"required"`
-}*/
-// ну или назвать BeerRequest или как то так
-type beerClipboard struct {
-	ID      int    `json:"id"`
-	Name    string `json:"name" binding:"required"`
-	Brewery int    `json:"brewery" binding:"required"`
+type BeerRequest struct {
+	ID          int    `json:"id"`
+	Name        string `json:"name" binding:"required"`
+	BreweriesID int    `json:"breweries_id" binding:"required"`
 }
 
 type BeerController struct {
-	repository *repository.BeerRepository
+	repository *repository.BeersRepository
 }
 
-func NewBeerController(repository *repository.BeerRepository) *BeerController {
+func NewBeerController(repository *repository.BeersRepository) *BeerController {
 	return &BeerController{
 		repository: repository,
 	}
 }
 
 func (o *BeerController) GetBeer(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := ValidID(c.Param("id"))
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusBadRequest)
+		errorcrud.ErrorCheck(c, err)
 		return
 	}
-	if id < 1 {
-		log.Println("incorrect id (id < 1)")
-		c.Status(http.StatusBadRequest)
-		return
-	}
+
 	beer, err := o.repository.GetBeer(c, id)
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusInternalServerError)
+		errorcrud.ErrorCheck(c, err)
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
 		"beer":   beer,
@@ -69,81 +60,79 @@ func (o *BeerController) GetBeer(c *gin.Context) {
 
 func (o *BeerController) CreateBeer(c *gin.Context) {
 
-	var beerCb beerClipboard
-	err := c.ShouldBindJSON(&beerCb)
+	var beerRq BeerRequest
+	err := c.ShouldBindJSON(&beerRq)
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusBadRequest)
+		errorcrud.ErrInvalidJson(c, err)
 		return
-	}
-	beer := models.Beer{
-		ID:      beerCb.ID, // айди не нужен, его бд добавит
-		Name:    beerCb.Name,
-		Brewery: beerCb.Brewery,
 	}
 
-	beerCb.ID, err = o.repository.AddBeer(c, beer)
+	beer := models.Beer{
+		Name:    beerRq.Name,
+		Brewery: beerRq.BreweriesID,
+	}
+
+	beer, err = o.repository.AddBeer(c, &beer)
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusInternalServerError)
+		errorcrud.ErrorCheck(c, err)
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"status": "beer create",
-		"beer":   beerCb,
+		"status": "success",
+		"beer":   beer,
 	})
 	return
 }
 
 func (o *BeerController) UpdateBeer(c *gin.Context) {
-
-	var beerCb beerClipboard
-	err := c.ShouldBindJSON(&beerCb)
+	id, err := ValidID(c.Param("id"))
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusBadRequest)
+		errorcrud.ErrorCheck(c, err)
+		return
+	}
+
+	var beerRq BeerRequest
+	err = c.ShouldBindJSON(&beerRq)
+	if err != nil {
+		errorcrud.ErrInvalidJson(c, err)
 		return
 	}
 
 	beer := models.Beer{
-		ID:      beerCb.ID, // айди может быть 0 и минусовым и тд, надо валидацию
-		Name:    beerCb.Name,
-		Brewery: beerCb.Brewery,
+		ID:      id,
+		Name:    beerRq.Name,
+		Brewery: beerRq.BreweriesID,
 	}
 
-	err = o.repository.UpdateBeer(c, beer)
+	beer, err = o.repository.UpdateBeer(c, &beer)
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusInternalServerError)
+		errorcrud.ErrorCheck(c, err)
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"status": "beer update",
-		"beer":   beerCb,
+		"status": "success",
+		"beer":   beer,
 	})
 	return
 }
 
 func (o *BeerController) DeleteBeer(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := ValidID(c.Param("id"))
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusBadRequest)
+		errorcrud.ErrorCheck(c, err)
 		return
 	}
-	if id < 1 {
-		log.Println("incorrect id (id < 1)")
-		c.Status(http.StatusBadRequest)
-		return
-	}
+
 	err = o.repository.DeleteBeer(c, id)
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusInternalServerError)
+		errorcrud.ErrorCheck(c, err)
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"status": "beer delete",
+		"status": "success",
 	})
 }
 

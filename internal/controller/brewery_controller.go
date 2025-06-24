@@ -1,49 +1,42 @@
 package controller
 
 import (
-	"log"
-	"net/http"
-	"strconv"
-
 	"github.com/gin-gonic/gin"
+	"github.com/snyxzero/apiProject/internal/errorcrud"
+	"net/http"
 
 	"github.com/snyxzero/apiProject/internal/models"
 	"github.com/snyxzero/apiProject/internal/repository"
 )
 
-type breweryClipboard struct {
+type BreweryRequest struct {
 	ID   int    `json:"id"`
 	Name string `json:"name" binding:"required"`
 }
 
 type BreweryController struct {
-	repository *repository.BreweryRepository
+	repository *repository.BreweriesRepository
 }
 
-func NewBreweryController(repository *repository.BreweryRepository) *BreweryController {
+func NewBreweryController(repository *repository.BreweriesRepository) *BreweryController {
 	return &BreweryController{
 		repository: repository,
 	}
 }
 
 func (uc *BreweryController) GetBrewery(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := ValidID(c.Param("id"))
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusBadRequest)
+		errorcrud.ErrorCheck(c, err)
 		return
 	}
-	if id < 1 {
-		log.Println("incorrect id (id < 1)")
-		c.Status(http.StatusBadRequest)
-		return
-	}
+
 	brewery, err := uc.repository.GetBrewery(c, id)
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusInternalServerError)
+		errorcrud.ErrorCheck(c, err)
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
 		"brewery": brewery,
@@ -52,79 +45,78 @@ func (uc *BreweryController) GetBrewery(c *gin.Context) {
 }
 
 func (uc *BreweryController) CreateBrewery(c *gin.Context) {
-
-	var breweryCb breweryClipboard
-	err := c.ShouldBindJSON(&breweryCb)
+	var breweryRq BreweryRequest
+	err := c.ShouldBindJSON(&breweryRq)
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusBadRequest)
+		errorcrud.ErrInvalidJson(c, err)
 		return
 	}
-	user := models.Brewery{ // название не user)
-		Name: breweryCb.Name,
+
+	brewery := models.Brewery{
+		Name: breweryRq.Name,
 	}
 
-	breweryCb.ID, err = uc.repository.AddBrewery(c, user)
+	brewery, err = uc.repository.AddBrewery(c, &brewery)
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusInternalServerError)
+		errorcrud.ErrorCheck(c, err)
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"status":  " brewery create",
-		"brewery": breweryCb,
+		"status":  "success",
+		"brewery": brewery,
 	})
 
 	return
 }
 
 func (uc *BreweryController) UpdateBrewery(c *gin.Context) {
-
-	var breweryCb breweryClipboard
-	err := c.ShouldBindJSON(&breweryCb)
+	id, err := ValidID(c.Param("id"))
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusBadRequest)
+		errorcrud.ErrorCheck(c, err)
+		return
+	}
+
+	var breweryRq BreweryRequest
+	err = c.ShouldBindJSON(&breweryRq)
+	if err != nil {
+		errorcrud.ErrInvalidJson(c, err)
 		return
 	}
 
 	brewery := models.Brewery{
-		Name: breweryCb.Name,
+		ID:   id,
+		Name: breweryRq.Name,
 	}
 
-	err = uc.repository.UpdateBrewery(c, brewery)
+	brewery, err = uc.repository.UpdateBrewery(c, &brewery)
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusInternalServerError)
+		errorcrud.ErrorCheck(c, err)
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"status":  "brewery update",
-		"brewery": breweryCb,
+		"status":  "success",
+		"brewery": brewery,
 	})
 	return
 }
 
 func (uc *BreweryController) DeleteBrewery(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := ValidID(c.Param("id"))
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusBadRequest)
+		errorcrud.ErrorCheck(c, err)
 		return
 	}
-	if id < 1 {
-		log.Println("incorrect id (id < 1)")
-		c.Status(http.StatusBadRequest)
-		return
-	}
+
 	err = uc.repository.DeleteBrewery(c, id)
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusInternalServerError)
+		errorcrud.ErrorCheck(c, err)
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"status": "brewery delete",
+		"status": "success",
 	})
 }
 
