@@ -3,6 +3,7 @@ package controller
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/snyxzero/apiProject/internal/errorcrud"
+	"github.com/snyxzero/apiProject/internal/service/ratingpoints"
 	"net/http"
 
 	"github.com/snyxzero/apiProject/internal/models"
@@ -17,12 +18,14 @@ type RatingRequest struct {
 }
 
 type UserBeerRatingController struct {
-	repository *repository.UserBeerRatingsRepository
+	repository   *repository.UserBeerRatingsRepository
+	ratingPoints *ratingpoints.RatingPoints
 }
 
-func NewRatingController(repository *repository.UserBeerRatingsRepository) *UserBeerRatingController {
+func NewRatingController(repository *repository.UserBeerRatingsRepository, ratingPoints *ratingpoints.RatingPoints) *UserBeerRatingController {
 	return &UserBeerRatingController{
-		repository: repository,
+		repository:   repository,
+		ratingPoints: ratingPoints,
 	}
 }
 
@@ -65,6 +68,13 @@ func (o *UserBeerRatingController) CreateRating(c *gin.Context) {
 		errorcrud.ErrorCheck(c, err)
 		return
 	}
+
+	err = o.ratingPoints.AddRatingPointsToUser(c, &userBeerRating)
+	if err != nil {
+		errorcrud.ErrorCheck(c, err)
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"status":         "success",
 		"userBeerRating": userBeerRating,

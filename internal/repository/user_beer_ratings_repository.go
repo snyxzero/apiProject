@@ -19,42 +19,42 @@ func NewUserBeerRatingsRepository(pool *pgxpool.Pool) *UserBeerRatingsRepository
 }
 
 func (o *UserBeerRatingsRepository) GetRating(ctx context.Context, id int) (*models.UserBeerRating, error) {
-	var rating models.UserBeerRating
+	var userBeerRating models.UserBeerRating
 	err := o.pool.QueryRow(ctx, `
 SELECT id, users_id, beers_id, rating FROM user_beer_ratings 
-WHERE id = $1`, id).Scan(&rating.ID, &rating.User, &rating.Beer, &rating.Rating)
+WHERE id = $1`, id).Scan(&userBeerRating.ID, &userBeerRating.User, &userBeerRating.Beer, &userBeerRating.Rating)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, fmt.Errorf("%w: %v", errorcrud.ErrUserBeerRatingNotFound, err)
 		}
 		return nil, fmt.Errorf("%w: %v", errorcrud.ErrGettingData, err)
 	}
-	return &rating, nil
+	return &userBeerRating, nil
 }
 
-func (o *UserBeerRatingsRepository) AddRating(ctx context.Context, rating *models.UserBeerRating) (models.UserBeerRating, error) {
+func (o *UserBeerRatingsRepository) AddRating(ctx context.Context, userBeerRating *models.UserBeerRating) (models.UserBeerRating, error) {
 	err := o.pool.QueryRow(ctx, `
 INSERT INTO user_beer_ratings (users_id, beers_id, rating) 
-VALUES ($1, $2, $3) RETURNING id, users_id, beers_id, rating`, rating.User, rating.Beer, rating.Rating).Scan(&rating.ID, &rating.User, &rating.Beer, &rating.Rating)
+VALUES ($1, $2, $3) RETURNING id, users_id, beers_id, rating`, userBeerRating.User, userBeerRating.Beer, userBeerRating.Rating).Scan(&userBeerRating.ID, &userBeerRating.User, &userBeerRating.Beer, &userBeerRating.Rating)
 	if err != nil {
 		return models.UserBeerRating{}, fmt.Errorf("%w: %v", errorcrud.ErrCreatingData, err)
 	}
-	return *rating, nil
+	return *userBeerRating, nil
 }
 
-func (o *UserBeerRatingsRepository) UpdateRating(ctx context.Context, rating *models.UserBeerRating) (models.UserBeerRating, error) {
+func (o *UserBeerRatingsRepository) UpdateRating(ctx context.Context, userBeerRating *models.UserBeerRating) (models.UserBeerRating, error) {
 	err := o.pool.QueryRow(ctx, `
 UPDATE user_beer_ratings 
 SET users_id = $2, beers_id = $3, rating = $4 
 WHERE id = $1
-RETURNING id, users_id, beers_id, rating`, rating.ID, rating.User, rating.Beer, rating.Rating).Scan(&rating.ID, &rating.User, &rating.Beer, &rating.Rating)
+RETURNING id, users_id, beers_id, rating`, userBeerRating.ID, userBeerRating.User, userBeerRating.Beer, userBeerRating.Rating).Scan(&userBeerRating.ID, &userBeerRating.User, &userBeerRating.Beer, &userBeerRating.Rating)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return models.UserBeerRating{}, fmt.Errorf("%w: %v", errorcrud.ErrUserBeerRatingNotFound, err)
 		}
 		return models.UserBeerRating{}, fmt.Errorf("%w: %v", errorcrud.ErrUpdatingData, err)
 	}
-	return *rating, nil
+	return *userBeerRating, nil
 }
 
 func (o *UserBeerRatingsRepository) DeleteRating(ctx context.Context, id int) error {
@@ -68,6 +68,39 @@ WHERE id = $1`, id)
 		return fmt.Errorf("%w: %v", errorcrud.ErrDeletingData, err)
 	}
 	return nil
+}
+
+func (o *UserBeerRatingsRepository) GetRatingCountForUser(ctx context.Context, id int) (int, error) {
+	var count int
+	err := o.pool.QueryRow(ctx, `
+SELECT COUNT(*) 
+FROM user_beer_ratings
+WHERE users_id = $1`, id).Scan(&count)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, fmt.Errorf("%w: %v", errorcrud.ErrUserBeerRatingNotFound, err)
+		}
+		return 0, fmt.Errorf("%w: %v", errorcrud.ErrGettingData, err)
+	}
+	return count, err
+}
+
+func (o *UserBeerRatingsRepository) GetRatingCountForUserForBrewery(ctx context.Context, userBeerRating *models.UserBeerRating) (int, error) {
+	var count int
+	err := o.pool.QueryRow(ctx, `
+SELECT COUNT(*) AS brewery_ratings_count
+FROM user_beer_ratings ubr
+JOIN beers b ON ubr.beers_id = b.id
+WHERE ubr.users_id = $1
+AND b.breweries_id = (SELECT breweries_id FROM beers WHERE id = $2)`, userBeerRating.User, userBeerRating.Beer).Scan(&count)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, fmt.Errorf("%w: %v", errorcrud.ErrUserBeerRatingNotFound, err)
+		}
+		return 0, fmt.Errorf("%w: %v", errorcrud.ErrGettingData, err)
+	}
+	return count, err
+
 }
 
 //

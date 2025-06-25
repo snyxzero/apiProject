@@ -20,7 +20,7 @@ func NewUsersRepository(pool *pgxpool.Pool) *UsersRepository {
 
 func (o *UsersRepository) GetUser(c *gin.Context, id int) (*models.User, error) {
 	var user models.User
-	err := o.pool.QueryRow(c, "SELECT id, name FROM users WHERE id = $1", id).Scan(&user.ID, &user.Name)
+	err := o.pool.QueryRow(c, "SELECT * FROM users WHERE id = $1", id).Scan(&user.ID, &user.Name, &user.RatingPoints)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, fmt.Errorf("%w: %v", errorcrud.ErrUserNotFound, err)
@@ -31,7 +31,7 @@ func (o *UsersRepository) GetUser(c *gin.Context, id int) (*models.User, error) 
 }
 
 func (o *UsersRepository) AddUser(c *gin.Context, user *models.User) (models.User, error) {
-	err := o.pool.QueryRow(c, "INSERT INTO users (name) VALUES ($1) RETURNING id, name", user.Name).Scan(&user.ID, &user.Name)
+	err := o.pool.QueryRow(c, `INSERT INTO users (name, rating_points) VALUES ($1, 0) RETURNING *`, user.Name).Scan(&user.ID, &user.Name, &user.RatingPoints)
 	if err != nil {
 		return models.User{}, fmt.Errorf("%w: %v", errorcrud.ErrCreatingData, err)
 	}
@@ -41,7 +41,7 @@ func (o *UsersRepository) AddUser(c *gin.Context, user *models.User) (models.Use
 func (o *UsersRepository) UpdateUser(c *gin.Context, user *models.User) (models.User, error) {
 	err := o.pool.QueryRow(c, `
 UPDATE users SET name = $1 WHERE id = $2 
-RETURNING id, name`, user.Name, user.ID).Scan(&user.ID, &user.Name)
+RETURNING *`, user.Name, user.ID).Scan(&user.ID, &user.Name, &user.RatingPoints)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return models.User{}, fmt.Errorf("%w: %v", errorcrud.ErrUserNotFound, err)
@@ -58,6 +58,16 @@ func (o *UsersRepository) DeleteUser(c *gin.Context, id int) error {
 			return fmt.Errorf("%w: %v", errorcrud.ErrUserNotFound, err)
 		}
 		return fmt.Errorf("%w: %v", errorcrud.ErrDeletingData, err)
+	}
+	return nil
+}
+
+func (o *UsersRepository) UpdateUserPoints(c *gin.Context, id int, points int) error {
+	_, err := o.pool.Exec(c, `
+UPDATE users SET rating_points = $2 WHERE id = $1 
+RETURNING *`, id, points)
+	if err != nil {
+		return fmt.Errorf("%w: %v", errorcrud.ErrUpdatingData, err)
 	}
 	return nil
 }

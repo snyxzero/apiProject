@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/snyxzero/apiProject/internal/controller"
 	"github.com/snyxzero/apiProject/internal/repository"
+	"github.com/snyxzero/apiProject/internal/service/ratingpoints"
 	"log"
 	"net/http"
 	"os"
@@ -57,7 +58,8 @@ func main() {
 	}
 
 	usersBeersRatingRepo := repository.NewUserBeerRatingsRepository(db.Pool())
-	usersBeersRatingCtrl := controller.NewRatingController(usersBeersRatingRepo)
+	usersBeersRatingPoints := ratingpoints.NewRatingPoints(usersBeersRatingRepo, usersRepo)
+	usersBeersRatingCtrl := controller.NewRatingController(usersBeersRatingRepo, usersBeersRatingPoints)
 	// Группа маршрутов /api/usersbeersrating
 	apiUsersBeersRating := r.Group("/api/usersbeersrating")
 	{

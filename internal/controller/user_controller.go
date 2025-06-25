@@ -9,8 +9,9 @@ import (
 )
 
 type UserRequest struct {
-	ID   int    `json:"id"`
-	Name string `json:"name" binding:"required"`
+	ID           int    `json:"id"`
+	Name         string `json:"name" binding:"required"`
+	RatingPoints int
 }
 
 type UserController struct {
