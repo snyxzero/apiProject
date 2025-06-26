@@ -62,12 +62,12 @@ func (o *UsersRepository) DeleteUser(c *gin.Context, id int) error {
 	return nil
 }
 
-func (o *UsersRepository) UpdateUserPoints(c *gin.Context, id int, points int) error {
+func (o *UsersRepository) UpdateUserPoints(c *gin.Context, tx pgx.Tx, id int, points int) error {
 	if points == 0 {
 		return nil
 	}
 
-	_, err := o.pool.Exec(c, `
+	_, err := tx.Exec(c, `
 UPDATE users SET rating_points = $2 WHERE id = $1 
 RETURNING *`, id, points)
 	if err != nil {

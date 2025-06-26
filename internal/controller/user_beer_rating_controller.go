@@ -63,13 +63,7 @@ func (o *UserBeerRatingController) CreateRating(c *gin.Context) {
 		Rating: userBeerRatingRq.Rating,
 	}
 
-	userBeerRating, err = o.repository.AddRating(c, &userBeerRating)
-	if err != nil {
-		errorcrud.ErrorCheck(c, err)
-		return
-	}
-
-	err = o.ratingPoints.AddRatingPointsToUser(c, &userBeerRating)
+	userBeerRating, err = o.ratingPoints.AddRatingWithTransaction(c, &userBeerRating)
 	if err != nil {
 		errorcrud.ErrorCheck(c, err)
 		return

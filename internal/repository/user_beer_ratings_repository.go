@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/snyxzero/apiProject/internal/errorcrud"
@@ -32,8 +33,8 @@ WHERE id = $1`, id).Scan(&userBeerRating.ID, &userBeerRating.User, &userBeerRati
 	return &userBeerRating, nil
 }
 
-func (o *UserBeerRatingsRepository) AddRating(ctx context.Context, userBeerRating *models.UserBeerRating) (models.UserBeerRating, error) {
-	err := o.pool.QueryRow(ctx, `
+func (o *UserBeerRatingsRepository) AddRating(ctx *gin.Context, tx pgx.Tx, userBeerRating *models.UserBeerRating) (models.UserBeerRating, error) {
+	err := tx.QueryRow(ctx, `
 INSERT INTO user_beer_ratings (users_id, beers_id, rating) 
 VALUES ($1, $2, $3) RETURNING id, users_id, beers_id, rating`, userBeerRating.User, userBeerRating.Beer, userBeerRating.Rating).Scan(&userBeerRating.ID, &userBeerRating.User, &userBeerRating.Beer, &userBeerRating.Rating)
 	if err != nil {
@@ -70,9 +71,9 @@ WHERE id = $1`, id)
 	return nil
 }
 
-func (o *UserBeerRatingsRepository) GetRatingCountForUser(ctx context.Context, id int) (int, error) {
+func (o *UserBeerRatingsRepository) GetRatingCountForUser(ctx context.Context, tx pgx.Tx, id int) (int, error) {
 	var count int
-	err := o.pool.QueryRow(ctx, `
+	err := tx.QueryRow(ctx, `
 SELECT COUNT(*) 
 FROM user_beer_ratings
 WHERE users_id = $1`, id).Scan(&count)
@@ -85,9 +86,9 @@ WHERE users_id = $1`, id).Scan(&count)
 	return count, err
 }
 
-func (o *UserBeerRatingsRepository) GetRatingCountForUserForBrewery(ctx context.Context, userBeerRating *models.UserBeerRating) (int, error) {
+func (o *UserBeerRatingsRepository) GetRatingCountForUserForBrewery(ctx context.Context, tx pgx.Tx, userBeerRating *models.UserBeerRating) (int, error) {
 	var count int
-	err := o.pool.QueryRow(ctx, `
+	err := tx.QueryRow(ctx, `
 SELECT COUNT(*) AS brewery_ratings_count
 FROM user_beer_ratings ubr
 JOIN beers b ON ubr.beers_id = b.id
@@ -100,7 +101,14 @@ AND b.breweries_id = (SELECT breweries_id FROM beers WHERE id = $2)`, userBeerRa
 		return 0, fmt.Errorf("%w: %v", errorcrud.ErrGettingData, err)
 	}
 	return count, err
+}
 
+func (o *UserBeerRatingsRepository) StartTransition(ctx context.Context) (pgx.Tx, error) {
+	tx, err := o.pool.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	return tx, nil
 }
 
 //
