@@ -7,47 +7,41 @@ import (
 )
 
 type RatingPoints struct {
-	repositoryRating repository.UserBeerRatingsRepository
-	repositoryUser   repository.UsersRepository
+	ratingRepository repository.UserBeerRatingsRepository
+	userRepository   repository.UsersRepository
 }
 
-func NewRatingPoints(repositoryRating *repository.UserBeerRatingsRepository, repositoryUser *repository.UsersRepository) *RatingPoints {
+func NewRatingPoints(ratingRepository *repository.UserBeerRatingsRepository, userRepository *repository.UsersRepository) *RatingPoints {
 	return &RatingPoints{
-		repositoryRating: *repositoryRating,
-		repositoryUser:   *repositoryUser,
+		ratingRepository: *ratingRepository,
+		userRepository:   *userRepository,
 	}
 }
 
 func (r *RatingPoints) AddRatingPointsToUser(ctx *gin.Context, userBeerRating *models.UserBeerRating) error {
-	countRating, err := r.repositoryRating.GetRatingCountForUser(ctx, userBeerRating.ID)
+	countRating, err := r.ratingRepository.GetRatingCountForUser(ctx, userBeerRating.ID)
 	if err != nil {
 		return err
 	}
 
-	countRatingForBrewery, err := r.repositoryRating.GetRatingCountForUserForBrewery(ctx, userBeerRating)
+	countRatingForBrewery, err := r.ratingRepository.GetRatingCountForUserForBrewery(ctx, userBeerRating)
 	if err != nil {
 		return err
 	}
+
+	points := 0
 
 	if countRating == 1 {
-		err = r.repositoryUser.UpdateUserPoints(ctx, userBeerRating.ID, 50)
-		if err != nil {
-			return err
-		}
+		points += 50
 	}
 
 	if countRating%3 == 0 {
-		err = r.repositoryUser.UpdateUserPoints(ctx, userBeerRating.ID, 5)
-		if err != nil {
-			return err
-		}
+		points += 5
 	}
 
 	if countRatingForBrewery%2 == 0 {
-		err = r.repositoryUser.UpdateUserPoints(ctx, userBeerRating.ID, 10)
-		if err != nil {
-			return err
-		}
+		points += 10
 	}
+	err = r.userRepository.UpdateUserPoints(ctx, userBeerRating.ID, points)
 	return nil
 }

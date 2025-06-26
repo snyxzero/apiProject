@@ -63,6 +63,10 @@ func (o *UsersRepository) DeleteUser(c *gin.Context, id int) error {
 }
 
 func (o *UsersRepository) UpdateUserPoints(c *gin.Context, id int, points int) error {
+	if points == 0 {
+		return nil
+	}
+
 	_, err := o.pool.Exec(c, `
 UPDATE users SET rating_points = $2 WHERE id = $1 
 RETURNING *`, id, points)
