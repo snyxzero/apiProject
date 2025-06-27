@@ -4,7 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/snyxzero/apiProject/internal/errorcrud"
 	"github.com/snyxzero/apiProject/internal/models"
-	"github.com/snyxzero/apiProject/internal/repository"
+	"github.com/snyxzero/apiProject/internal/service"
 	"net/http"
 )
 
@@ -15,23 +15,23 @@ type UserRequest struct {
 }
 
 type UserController struct {
-	repository *repository.UsersRepository
+	service *service.UserService
 }
 
-func NewUserController(repository *repository.UsersRepository) *UserController {
+func NewUserController(service *service.UserService) *UserController {
 	return &UserController{
-		repository: repository,
+		service: service,
 	}
 }
 
-func (uc *UserController) GetUser(c *gin.Context) {
+func (o *UserController) GetUser(c *gin.Context) {
 	id, err := ValidID(c.Param("id"))
 	if err != nil {
 		errorcrud.ErrorCheck(c, err)
 		return
 	}
 
-	user, err := uc.repository.GetUser(c, id)
+	user, err := o.service.GetUser(c, id)
 	if err != nil {
 		errorcrud.ErrorCheck(c, err)
 		return
@@ -44,7 +44,7 @@ func (uc *UserController) GetUser(c *gin.Context) {
 	return
 }
 
-func (uc *UserController) CreateUser(c *gin.Context) {
+func (o *UserController) CreateUser(c *gin.Context) {
 	var userRq UserRequest
 	err := c.ShouldBindJSON(&userRq)
 	if err != nil {
@@ -52,11 +52,11 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 		return
 	}
 
-	user := models.User{
+	user := &models.User{
 		Name: userRq.Name,
 	}
 
-	user, err = uc.repository.AddUser(c, &user)
+	user, err = o.service.AddUser(c, user)
 	if err != nil {
 		errorcrud.ErrorCheck(c, err)
 		return
@@ -69,7 +69,7 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 	return
 }
 
-func (uc *UserController) UpdateUser(c *gin.Context) {
+func (o *UserController) UpdateUser(c *gin.Context) {
 	id, err := ValidID(c.Param("id"))
 	if err != nil {
 		errorcrud.ErrorCheck(c, err)
@@ -83,12 +83,12 @@ func (uc *UserController) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	user := models.User{
+	user := &models.User{
 		ID:   id,
 		Name: userRq.Name,
 	}
 
-	user, err = uc.repository.UpdateUser(c, &user)
+	user, err = o.service.UpdateUser(c, user)
 	if err != nil {
 		errorcrud.ErrorCheck(c, err)
 		return
@@ -101,14 +101,14 @@ func (uc *UserController) UpdateUser(c *gin.Context) {
 	return
 }
 
-func (uc *UserController) DeleteUser(c *gin.Context) {
+func (o *UserController) DeleteUser(c *gin.Context) {
 	id, err := ValidID(c.Param("id"))
 	if err != nil {
 		errorcrud.ErrorCheck(c, err)
 		return
 	}
 
-	err = uc.repository.DeleteUser(c, id)
+	err = o.service.DeleteUser(c, id)
 	if err != nil {
 		errorcrud.ErrorCheck(c, err)
 		return

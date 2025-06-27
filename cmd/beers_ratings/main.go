@@ -26,7 +26,8 @@ func main() {
 	defer db.Close()
 
 	usersRepo := repository.NewUsersRepository(db.Pool())
-	usersCtrl := controller.NewUserController(usersRepo)
+	usersService := service.NewUserService(usersRepo)
+	usersCtrl := controller.NewUserController(usersService)
 	// Группа маршрутов /api/users
 	apiUsers := r.Group("/api/users")
 	{
