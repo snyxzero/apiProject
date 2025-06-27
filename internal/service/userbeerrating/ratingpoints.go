@@ -48,13 +48,13 @@ func (r *RatingPoints) AddRatingPointsToUser(ctx *gin.Context, tx pgx.Tx, userBe
 	return nil
 }
 
-func (o *RatingPoints) AddRatingWithTransaction(c *gin.Context, userBeerRating *models.UserBeerRating) (models.UserBeerRating, error) {
+func (o *RatingPoints) AddRatingWithTransaction(c *gin.Context, userBeerRating *models.UserBeerRating) (*models.UserBeerRating, error) {
 	ctx := c.Request.Context()
 
 	// Начинаем транзакцию
 	tx, err := o.ratingRepository.StartTransition(ctx)
 	if err != nil {
-		return models.UserBeerRating{}, fmt.Errorf("failed to begin transaction: %w", err)
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
 	// Откладываем откат на случай ошибки
@@ -65,19 +65,19 @@ func (o *RatingPoints) AddRatingWithTransaction(c *gin.Context, userBeerRating *
 	}()
 
 	// Выполняем операции в транзакции
-	result, err := o.ratingRepository.AddRating(c, tx, userBeerRating)
+	result, err := o.ratingRepository.AddUserBeerRating(c, tx, userBeerRating)
 	if err != nil {
-		return models.UserBeerRating{}, err
+		return nil, err
 	}
 
-	err = o.AddRatingPointsToUser(c, tx, &result)
+	err = o.AddRatingPointsToUser(c, tx, result)
 	if err != nil {
-		return models.UserBeerRating{}, err
+		return nil, err
 	}
 
 	// Фиксируем транзакцию
 	if err := tx.Commit(ctx); err != nil {
-		return models.UserBeerRating{}, fmt.Errorf("failed to commit transaction: %w", err)
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return result, nil

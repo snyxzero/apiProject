@@ -62,15 +62,16 @@ func main() {
 	}
 
 	usersBeersRatingRepo := repository.NewUserBeerRatingsRepository(db.Pool())
+	usersBeersRatingService := service.NewUserBeerRatingService(usersBeersRatingRepo)
 	usersBeersRatingPoints := userbeerrating.NewRatingPoints(usersBeersRatingRepo, usersRepo)
-	usersBeersRatingCtrl := controller.NewRatingController(usersBeersRatingRepo, usersBeersRatingPoints)
+	usersBeersRatingCtrl := controller.NewRatingController(usersBeersRatingService, usersBeersRatingPoints)
 	// Группа маршрутов /api/usersbeersrating
 	apiUsersBeersRating := r.Group("/api/usersbeersrating")
 	{
-		apiUsersBeersRating.POST("/", usersBeersRatingCtrl.CreateRating)
-		apiUsersBeersRating.GET("/:id", usersBeersRatingCtrl.GetRating)
-		apiUsersBeersRating.PUT("/:id", usersBeersRatingCtrl.UpdateRating)
-		apiUsersBeersRating.DELETE("/:id", usersBeersRatingCtrl.DeleteRating)
+		apiUsersBeersRating.POST("/", usersBeersRatingCtrl.CreateUserBeerRating)
+		apiUsersBeersRating.GET("/:id", usersBeersRatingCtrl.GetUserBeerRating)
+		apiUsersBeersRating.PUT("/:id", usersBeersRatingCtrl.UpdateUserBeerRating)
+		apiUsersBeersRating.DELETE("/:id", usersBeersRatingCtrl.DeleteUserBeerRating)
 	}
 
 	// Создание сервера
