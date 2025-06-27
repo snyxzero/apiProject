@@ -5,7 +5,6 @@ import (
 	"github.com/snyxzero/apiProject/internal/errorcrud"
 	"github.com/snyxzero/apiProject/internal/models"
 	"github.com/snyxzero/apiProject/internal/service"
-	"github.com/snyxzero/apiProject/internal/service/userbeerrating"
 	"net/http"
 )
 
@@ -18,13 +17,12 @@ type RatingRequest struct {
 
 type UserBeerRatingController struct {
 	service      *service.UserBeerRatingService
-	ratingPoints *userbeerrating.RatingPoints
+	ratingPoints *service.RatingPoints
 }
 
-func NewRatingController(service *service.UserBeerRatingService, ratingPoints *userbeerrating.RatingPoints) *UserBeerRatingController {
+func NewUserBeerRatingController(service *service.UserBeerRatingService) *UserBeerRatingController {
 	return &UserBeerRatingController{
-		service:      service,
-		ratingPoints: ratingPoints,
+		service: service,
 	}
 }
 
@@ -62,7 +60,7 @@ func (o *UserBeerRatingController) CreateUserBeerRating(c *gin.Context) {
 		Rating: userBeerRatingRq.Rating,
 	}
 
-	userBeerRating, err = o.ratingPoints.AddRatingWithTransaction(c, userBeerRating)
+	userBeerRating, err = o.service.AddUserBeerRatingWithTransaction(c, userBeerRating)
 	if err != nil {
 		errorcrud.ErrorCheck(c, err)
 		return

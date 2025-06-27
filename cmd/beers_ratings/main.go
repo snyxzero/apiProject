@@ -7,7 +7,6 @@ import (
 	"github.com/snyxzero/apiProject/internal/controller"
 	"github.com/snyxzero/apiProject/internal/repository"
 	"github.com/snyxzero/apiProject/internal/service"
-	"github.com/snyxzero/apiProject/internal/service/userbeerrating"
 	"log"
 	"net/http"
 	"os"
@@ -62,9 +61,9 @@ func main() {
 	}
 
 	usersBeersRatingRepo := repository.NewUserBeerRatingsRepository(db.Pool())
-	usersBeersRatingService := service.NewUserBeerRatingService(usersBeersRatingRepo)
-	usersBeersRatingPoints := userbeerrating.NewRatingPoints(usersBeersRatingRepo, usersRepo)
-	usersBeersRatingCtrl := controller.NewRatingController(usersBeersRatingService, usersBeersRatingPoints)
+	usersBeersRatingPoints := service.NewRatingPoints(usersBeersRatingRepo, usersRepo)
+	usersBeersRatingService := service.NewUserBeerRatingService(usersBeersRatingRepo, usersBeersRatingPoints)
+	usersBeersRatingCtrl := controller.NewUserBeerRatingController(usersBeersRatingService)
 	// Группа маршрутов /api/usersbeersrating
 	apiUsersBeersRating := r.Group("/api/usersbeersrating")
 	{
