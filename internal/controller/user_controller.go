@@ -2,46 +2,41 @@ package controller
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/snyxzero/apiProject/internal/errorcrud"
 	"github.com/snyxzero/apiProject/internal/models"
 	"github.com/snyxzero/apiProject/internal/repository"
-	"log"
 	"net/http"
-	"strconv"
 )
 
-type userClipboard struct {
-	ID   int    `json:"id"`
-	Name string `json:"name" binding:"required"`
+type UserRequest struct {
+	ID           int    `json:"id"`
+	Name         string `json:"name" binding:"required"`
+	RatingPoints int
 }
 
 type UserController struct {
-	repository *repository.UserRepository
+	repository *repository.UsersRepository
 }
 
-func NewUserController(repository *repository.UserRepository) *UserController {
+func NewUserController(repository *repository.UsersRepository) *UserController {
 	return &UserController{
 		repository: repository,
 	}
 }
 
 func (uc *UserController) GetUser(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := ValidID(c.Param("id"))
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusBadRequest)
+		errorcrud.ErrorCheck(c, err)
 		return
 	}
-	if id < 1 {
-		log.Println("incorrect id (id < 1)")
-		c.Status(http.StatusBadRequest)
-		return
-	}
+
 	user, err := uc.repository.GetUser(c, id)
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusInternalServerError)
+		errorcrud.ErrorCheck(c, err)
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
 		"user":   user,
@@ -50,78 +45,77 @@ func (uc *UserController) GetUser(c *gin.Context) {
 }
 
 func (uc *UserController) CreateUser(c *gin.Context) {
-
-	var userCb userClipboard
-	err := c.ShouldBindJSON(&userCb)
+	var userRq UserRequest
+	err := c.ShouldBindJSON(&userRq)
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusBadRequest)
+		errorcrud.ErrInvalidJson(c, err)
 		return
 	}
+
 	user := models.User{
-		Name: userCb.Name,
+		Name: userRq.Name,
 	}
 
-	userCb.ID, err = uc.repository.AddUser(c, user)
+	user, err = uc.repository.AddUser(c, &user)
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusInternalServerError)
+		errorcrud.ErrorCheck(c, err)
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"status": "user create",
-		"user":   userCb,
+		"status": "success",
+		"user":   user,
 	})
 	return
 }
 
 func (uc *UserController) UpdateUser(c *gin.Context) {
-
-	var userCb userClipboard
-	err := c.ShouldBindJSON(&userCb)
+	id, err := ValidID(c.Param("id"))
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusBadRequest)
+		errorcrud.ErrorCheck(c, err)
+		return
+	}
+
+	var userRq UserRequest
+	err = c.ShouldBindJSON(&userRq)
+	if err != nil {
+		errorcrud.ErrInvalidJson(c, err)
 		return
 	}
 
 	user := models.User{
-		Name: userCb.Name,
+		ID:   id,
+		Name: userRq.Name,
 	}
 
-	err = uc.repository.UpdateUser(c, user)
+	user, err = uc.repository.UpdateUser(c, &user)
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusInternalServerError)
+		errorcrud.ErrorCheck(c, err)
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"status": "user update",
-		"user":   userCb,
+		"status": "success",
+		"user":   user,
 	})
 	return
 }
 
 func (uc *UserController) DeleteUser(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := ValidID(c.Param("id"))
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusBadRequest)
+		errorcrud.ErrorCheck(c, err)
 		return
 	}
-	if id < 1 {
-		log.Println("incorrect id (id < 1)")
-		c.Status(http.StatusBadRequest)
-		return
-	}
+
 	err = uc.repository.DeleteUser(c, id)
 	if err != nil {
-		log.Println(err)
-		c.Status(http.StatusInternalServerError)
+		errorcrud.ErrorCheck(c, err)
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"status": "user delete",
+		"status": "success",
 	})
 }
 

@@ -1,0 +1,114 @@
+package repository
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/snyxzero/apiProject/internal/errorcrud"
+	"github.com/snyxzero/apiProject/internal/models"
+)
+
+type UserBeerRatingsRepository struct {
+	pool *pgxpool.Pool
+}
+
+func NewUserBeerRatingsRepository(pool *pgxpool.Pool) *UserBeerRatingsRepository {
+	return &UserBeerRatingsRepository{pool: pool}
+}
+
+func (o *UserBeerRatingsRepository) GetRating(ctx context.Context, id int) (*models.UserBeerRating, error) {
+	var userBeerRating models.UserBeerRating
+	err := o.pool.QueryRow(ctx, `
+SELECT id, users_id, beers_id, rating FROM user_beer_ratings 
+WHERE id = $1`, id).Scan(&userBeerRating.ID, &userBeerRating.User, &userBeerRating.Beer, &userBeerRating.Rating)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("%w: %v", errorcrud.ErrUserBeerRatingNotFound, err)
+		}
+		return nil, fmt.Errorf("%w: %v", errorcrud.ErrGettingData, err)
+	}
+	return &userBeerRating, nil
+}
+
+func (o *UserBeerRatingsRepository) AddRating(ctx *gin.Context, tx pgx.Tx, userBeerRating *models.UserBeerRating) (models.UserBeerRating, error) {
+	err := tx.QueryRow(ctx, `
+INSERT INTO user_beer_ratings (users_id, beers_id, rating) 
+VALUES ($1, $2, $3) RETURNING id, users_id, beers_id, rating`, userBeerRating.User, userBeerRating.Beer, userBeerRating.Rating).Scan(&userBeerRating.ID, &userBeerRating.User, &userBeerRating.Beer, &userBeerRating.Rating)
+	if err != nil {
+		return models.UserBeerRating{}, fmt.Errorf("%w: %v", errorcrud.ErrCreatingData, err)
+	}
+	return *userBeerRating, nil
+}
+
+func (o *UserBeerRatingsRepository) UpdateRating(ctx context.Context, userBeerRating *models.UserBeerRating) (models.UserBeerRating, error) {
+	err := o.pool.QueryRow(ctx, `
+UPDATE user_beer_ratings 
+SET users_id = $2, beers_id = $3, rating = $4 
+WHERE id = $1
+RETURNING id, users_id, beers_id, rating`, userBeerRating.ID, userBeerRating.User, userBeerRating.Beer, userBeerRating.Rating).Scan(&userBeerRating.ID, &userBeerRating.User, &userBeerRating.Beer, &userBeerRating.Rating)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return models.UserBeerRating{}, fmt.Errorf("%w: %v", errorcrud.ErrUserBeerRatingNotFound, err)
+		}
+		return models.UserBeerRating{}, fmt.Errorf("%w: %v", errorcrud.ErrUpdatingData, err)
+	}
+	return *userBeerRating, nil
+}
+
+func (o *UserBeerRatingsRepository) DeleteRating(ctx context.Context, id int) error {
+	_, err := o.pool.Exec(ctx, `
+DELETE FROM user_beer_ratings 
+WHERE id = $1`, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return fmt.Errorf("%w: %v", errorcrud.ErrUserBeerRatingNotFound, err)
+		}
+		return fmt.Errorf("%w: %v", errorcrud.ErrDeletingData, err)
+	}
+	return nil
+}
+
+func (o *UserBeerRatingsRepository) GetRatingCountForUser(ctx context.Context, tx pgx.Tx, id int) (int, error) {
+	var count int
+	err := tx.QueryRow(ctx, `
+SELECT COUNT(*) 
+FROM user_beer_ratings
+WHERE users_id = $1`, id).Scan(&count)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, fmt.Errorf("%w: %v", errorcrud.ErrUserBeerRatingNotFound, err)
+		}
+		return 0, fmt.Errorf("%w: %v", errorcrud.ErrGettingData, err)
+	}
+	return count, err
+}
+
+func (o *UserBeerRatingsRepository) GetRatingCountForUserForBrewery(ctx context.Context, tx pgx.Tx, userBeerRating *models.UserBeerRating) (int, error) {
+	var count int
+	err := tx.QueryRow(ctx, `
+SELECT COUNT(*) AS brewery_ratings_count
+FROM user_beer_ratings ubr
+JOIN beers b ON ubr.beers_id = b.id
+WHERE ubr.users_id = $1
+AND b.breweries_id = (SELECT breweries_id FROM beers WHERE id = $2)`, userBeerRating.User, userBeerRating.Beer).Scan(&count)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, fmt.Errorf("%w: %v", errorcrud.ErrUserBeerRatingNotFound, err)
+		}
+		return 0, fmt.Errorf("%w: %v", errorcrud.ErrGettingData, err)
+	}
+	return count, err
+}
+
+func (o *UserBeerRatingsRepository) StartTransition(ctx context.Context) (pgx.Tx, error) {
+	tx, err := o.pool.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	return tx, nil
+}
+
+//
