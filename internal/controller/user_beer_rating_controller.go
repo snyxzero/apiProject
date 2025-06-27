@@ -17,7 +17,7 @@ type RatingRequest struct {
 
 type UserBeerRatingController struct {
 	service      *service.UserBeerRatingService
-	ratingPoints *service.RatingPoints
+	ratingPoints *service.СalculationRatingPoints
 }
 
 func NewUserBeerRatingController(service *service.UserBeerRatingService) *UserBeerRatingController {
