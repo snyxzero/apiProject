@@ -1,4 +1,4 @@
-package ratingpoints
+package userbeerrating
 
 import (
 	"fmt"

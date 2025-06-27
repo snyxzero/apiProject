@@ -3,7 +3,7 @@ package controller
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/snyxzero/apiProject/internal/errorcrud"
-	"github.com/snyxzero/apiProject/internal/service/ratingpoints"
+	"github.com/snyxzero/apiProject/internal/service/userbeerrating"
 	"net/http"
 
 	"github.com/snyxzero/apiProject/internal/models"
@@ -19,10 +19,10 @@ type RatingRequest struct {
 
 type UserBeerRatingController struct {
 	repository   *repository.UserBeerRatingsRepository
-	ratingPoints *ratingpoints.RatingPoints
+	ratingPoints *userbeerrating.RatingPoints
 }
 
-func NewRatingController(repository *repository.UserBeerRatingsRepository, ratingPoints *ratingpoints.RatingPoints) *UserBeerRatingController {
+func NewRatingController(repository *repository.UserBeerRatingsRepository, ratingPoints *userbeerrating.RatingPoints) *UserBeerRatingController {
 	return &UserBeerRatingController{
 		repository:   repository,
 		ratingPoints: ratingPoints,

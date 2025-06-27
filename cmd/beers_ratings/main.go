@@ -6,7 +6,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/snyxzero/apiProject/internal/controller"
 	"github.com/snyxzero/apiProject/internal/repository"
-	"github.com/snyxzero/apiProject/internal/service/ratingpoints"
+	"github.com/snyxzero/apiProject/internal/service"
+	"github.com/snyxzero/apiProject/internal/service/userbeerrating"
 	"log"
 	"net/http"
 	"os"
@@ -36,14 +37,15 @@ func main() {
 	}
 
 	breweriesRepo := repository.NewBreweriesRepository(db.Pool())
-	breweriesCtrl := controller.NewBreweryController(breweriesRepo)
+	breweriesService := service.NewBreweryService(breweriesRepo)
+	breweriesCtrl := controller.NewBreweryController(breweriesService)
 	// Группа маршрутов /api/breweries
 	apiBreweries := r.Group("/api/breweries")
 	{
 		apiBreweries.POST("/", breweriesCtrl.CreateBrewery)
 		apiBreweries.GET("/:id", breweriesCtrl.GetBrewery)
 		apiBreweries.PUT("/:id", breweriesCtrl.UpdateBrewery)
-		apiBreweries.DELETE("/:id", breweriesCtrl.DeleteBrewery)
+		//apiBreweries.DELETE("/:id", breweriesCtrl.DeleteBrewery)
 	}
 
 	beersRepo := repository.NewBeersRepository(db.Pool())
@@ -58,7 +60,7 @@ func main() {
 	}
 
 	usersBeersRatingRepo := repository.NewUserBeerRatingsRepository(db.Pool())
-	usersBeersRatingPoints := ratingpoints.NewRatingPoints(usersBeersRatingRepo, usersRepo)
+	usersBeersRatingPoints := userbeerrating.NewRatingPoints(usersBeersRatingRepo, usersRepo)
 	usersBeersRatingCtrl := controller.NewRatingController(usersBeersRatingRepo, usersBeersRatingPoints)
 	// Группа маршрутов /api/usersbeersrating
 	apiUsersBeersRating := r.Group("/api/usersbeersrating")

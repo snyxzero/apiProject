@@ -3,10 +3,10 @@ package controller
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/snyxzero/apiProject/internal/errorcrud"
+	"github.com/snyxzero/apiProject/internal/service"
 	"net/http"
 
 	"github.com/snyxzero/apiProject/internal/models"
-	"github.com/snyxzero/apiProject/internal/repository"
 )
 
 type BreweryRequest struct {
@@ -15,36 +15,36 @@ type BreweryRequest struct {
 }
 
 type BreweryController struct {
-	repository *repository.BreweriesRepository
+	service *service.BreweryService
 }
 
-func NewBreweryController(repository *repository.BreweriesRepository) *BreweryController {
+func NewBreweryController(service *service.BreweryService) *BreweryController {
 	return &BreweryController{
-		repository: repository,
+		service: service,
 	}
 }
 
-func (uc *BreweryController) GetBrewery(c *gin.Context) {
+func (o *BreweryController) GetBrewery(c *gin.Context) {
 	id, err := ValidID(c.Param("id"))
 	if err != nil {
 		errorcrud.ErrorCheck(c, err)
 		return
 	}
-
-	brewery, err := uc.repository.GetBrewery(c, id)
+	var brewery *models.Brewery
+	brewery, err = o.service.GetBrewery(c, id)
 	if err != nil {
 		errorcrud.ErrorCheck(c, err)
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"status":  "success",
-		"brewery": brewery,
+		"status": "success",
+		"data":   brewery,
 	})
 	return
 }
 
-func (uc *BreweryController) CreateBrewery(c *gin.Context) {
+func (o *BreweryController) CreateBrewery(c *gin.Context) {
 	var breweryRq BreweryRequest
 	err := c.ShouldBindJSON(&breweryRq)
 	if err != nil {
@@ -52,25 +52,25 @@ func (uc *BreweryController) CreateBrewery(c *gin.Context) {
 		return
 	}
 
-	brewery := models.Brewery{
+	brewery := &models.Brewery{
 		Name: breweryRq.Name,
 	}
 
-	brewery, err = uc.repository.AddBrewery(c, &brewery)
+	brewery, err = o.service.AddBrewery(c, brewery)
 	if err != nil {
 		errorcrud.ErrorCheck(c, err)
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"status":  "success",
-		"brewery": brewery,
+		"status": "success",
+		"data":   brewery,
 	})
 
 	return
 }
 
-func (uc *BreweryController) UpdateBrewery(c *gin.Context) {
+func (o *BreweryController) UpdateBrewery(c *gin.Context) {
 	id, err := ValidID(c.Param("id"))
 	if err != nil {
 		errorcrud.ErrorCheck(c, err)
@@ -84,32 +84,32 @@ func (uc *BreweryController) UpdateBrewery(c *gin.Context) {
 		return
 	}
 
-	brewery := models.Brewery{
+	brewery := &models.Brewery{
 		ID:   id,
 		Name: breweryRq.Name,
 	}
 
-	brewery, err = uc.repository.UpdateBrewery(c, &brewery)
+	brewery, err = o.service.UpdateBrewery(c, brewery)
 	if err != nil {
 		errorcrud.ErrorCheck(c, err)
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"status":  "success",
-		"brewery": brewery,
+		"status": "success",
+		"data":   brewery,
 	})
 	return
 }
 
-func (uc *BreweryController) DeleteBrewery(c *gin.Context) {
+func (o *BreweryController) DeleteBrewery(c *gin.Context) {
 	id, err := ValidID(c.Param("id"))
 	if err != nil {
 		errorcrud.ErrorCheck(c, err)
 		return
 	}
 
-	err = uc.repository.DeleteBrewery(c, id)
+	err = o.service.DeleteBrewery(c, id)
 	if err != nil {
 		errorcrud.ErrorCheck(c, err)
 		return
