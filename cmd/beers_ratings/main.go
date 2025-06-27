@@ -50,7 +50,8 @@ func main() {
 	}
 
 	beersRepo := repository.NewBeersRepository(db.Pool())
-	beersCtrl := controller.NewBeerController(beersRepo)
+	beersService := service.NewBeerService(beersRepo)
+	beersCtrl := controller.NewBeerController(beersService)
 	// Группа маршрутов /api/beers
 	apiBeers := r.Group("/api/beers")
 	{
