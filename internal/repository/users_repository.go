@@ -30,25 +30,25 @@ func (o *UsersRepository) GetUser(c *gin.Context, id int) (*models.User, error) 
 	return &user, nil
 }
 
-func (o *UsersRepository) AddUser(c *gin.Context, user *models.User) (models.User, error) {
+func (o *UsersRepository) AddUser(c *gin.Context, user *models.User) (*models.User, error) {
 	err := o.pool.QueryRow(c, `INSERT INTO users (name, rating_points) VALUES ($1, 0) RETURNING *`, user.Name).Scan(&user.ID, &user.Name, &user.RatingPoints)
 	if err != nil {
-		return models.User{}, fmt.Errorf("%w: %v", errorcrud.ErrCreatingData, err)
+		return nil, fmt.Errorf("%w: %v", errorcrud.ErrCreatingData, err)
 	}
-	return *user, nil
+	return user, nil
 }
 
-func (o *UsersRepository) UpdateUser(c *gin.Context, user *models.User) (models.User, error) {
+func (o *UsersRepository) UpdateUser(c *gin.Context, user *models.User) (*models.User, error) {
 	err := o.pool.QueryRow(c, `
 UPDATE users SET name = $1 WHERE id = $2 
 RETURNING *`, user.Name, user.ID).Scan(&user.ID, &user.Name, &user.RatingPoints)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return models.User{}, fmt.Errorf("%w: %v", errorcrud.ErrUserNotFound, err)
+			return nil, fmt.Errorf("%w: %v", errorcrud.ErrUserNotFound, err)
 		}
-		return models.User{}, fmt.Errorf("%w: %v", errorcrud.ErrUpdatingData, err)
+		return nil, fmt.Errorf("%w: %v", errorcrud.ErrUpdatingData, err)
 	}
-	return *user, nil
+	return user, nil
 }
 
 func (o *UsersRepository) DeleteUser(c *gin.Context, id int) error {

@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/snyxzero/apiProject/internal/controller"
 	"github.com/snyxzero/apiProject/internal/repository"
-	"github.com/snyxzero/apiProject/internal/service/ratingpoints"
+	"github.com/snyxzero/apiProject/internal/service"
 	"log"
 	"net/http"
 	"os"
@@ -25,7 +25,8 @@ func main() {
 	defer db.Close()
 
 	usersRepo := repository.NewUsersRepository(db.Pool())
-	usersCtrl := controller.NewUserController(usersRepo)
+	usersService := service.NewUserService(usersRepo)
+	usersCtrl := controller.NewUserController(usersService)
 	// Группа маршрутов /api/users
 	apiUsers := r.Group("/api/users")
 	{
@@ -36,18 +37,20 @@ func main() {
 	}
 
 	breweriesRepo := repository.NewBreweriesRepository(db.Pool())
-	breweriesCtrl := controller.NewBreweryController(breweriesRepo)
+	breweriesService := service.NewBreweryService(breweriesRepo)
+	breweriesCtrl := controller.NewBreweryController(breweriesService)
 	// Группа маршрутов /api/breweries
 	apiBreweries := r.Group("/api/breweries")
 	{
 		apiBreweries.POST("/", breweriesCtrl.CreateBrewery)
 		apiBreweries.GET("/:id", breweriesCtrl.GetBrewery)
 		apiBreweries.PUT("/:id", breweriesCtrl.UpdateBrewery)
-		apiBreweries.DELETE("/:id", breweriesCtrl.DeleteBrewery)
+		//apiBreweries.DELETE("/:id", breweriesCtrl.DeleteBrewery)
 	}
 
 	beersRepo := repository.NewBeersRepository(db.Pool())
-	beersCtrl := controller.NewBeerController(beersRepo)
+	beersService := service.NewBeerService(beersRepo)
+	beersCtrl := controller.NewBeerController(beersService)
 	// Группа маршрутов /api/beers
 	apiBeers := r.Group("/api/beers")
 	{
@@ -58,15 +61,16 @@ func main() {
 	}
 
 	usersBeersRatingRepo := repository.NewUserBeerRatingsRepository(db.Pool())
-	usersBeersRatingPoints := ratingpoints.NewRatingPoints(usersBeersRatingRepo, usersRepo)
-	usersBeersRatingCtrl := controller.NewRatingController(usersBeersRatingRepo, usersBeersRatingPoints)
+	usersBeersRatingPoints := service.NewRatingPoints()
+	usersBeersRatingService := service.NewUserBeerRatingService(usersBeersRatingRepo, usersRepo, usersBeersRatingPoints)
+	usersBeersRatingCtrl := controller.NewUserBeerRatingController(usersBeersRatingService)
 	// Группа маршрутов /api/usersbeersrating
 	apiUsersBeersRating := r.Group("/api/usersbeersrating")
 	{
-		apiUsersBeersRating.POST("/", usersBeersRatingCtrl.CreateRating)
-		apiUsersBeersRating.GET("/:id", usersBeersRatingCtrl.GetRating)
-		apiUsersBeersRating.PUT("/:id", usersBeersRatingCtrl.UpdateRating)
-		apiUsersBeersRating.DELETE("/:id", usersBeersRatingCtrl.DeleteRating)
+		apiUsersBeersRating.POST("/", usersBeersRatingCtrl.CreateUserBeerRating)
+		apiUsersBeersRating.GET("/:id", usersBeersRatingCtrl.GetUserBeerRating)
+		apiUsersBeersRating.PUT("/:id", usersBeersRatingCtrl.UpdateUserBeerRating)
+		apiUsersBeersRating.DELETE("/:id", usersBeersRatingCtrl.DeleteUserBeerRating)
 	}
 
 	// Создание сервера

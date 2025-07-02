@@ -19,7 +19,7 @@ func NewUserBeerRatingsRepository(pool *pgxpool.Pool) *UserBeerRatingsRepository
 	return &UserBeerRatingsRepository{pool: pool}
 }
 
-func (o *UserBeerRatingsRepository) GetRating(ctx context.Context, id int) (*models.UserBeerRating, error) {
+func (o *UserBeerRatingsRepository) GetUserBeerRating(ctx context.Context, id int) (*models.UserBeerRating, error) {
 	var userBeerRating models.UserBeerRating
 	err := o.pool.QueryRow(ctx, `
 SELECT id, users_id, beers_id, rating FROM user_beer_ratings 
@@ -33,32 +33,32 @@ WHERE id = $1`, id).Scan(&userBeerRating.ID, &userBeerRating.User, &userBeerRati
 	return &userBeerRating, nil
 }
 
-func (o *UserBeerRatingsRepository) AddRating(ctx *gin.Context, tx pgx.Tx, userBeerRating *models.UserBeerRating) (models.UserBeerRating, error) {
+func (o *UserBeerRatingsRepository) AddUserBeerRating(ctx *gin.Context, tx pgx.Tx, userBeerRating *models.UserBeerRating) (*models.UserBeerRating, error) {
 	err := tx.QueryRow(ctx, `
 INSERT INTO user_beer_ratings (users_id, beers_id, rating) 
 VALUES ($1, $2, $3) RETURNING id, users_id, beers_id, rating`, userBeerRating.User, userBeerRating.Beer, userBeerRating.Rating).Scan(&userBeerRating.ID, &userBeerRating.User, &userBeerRating.Beer, &userBeerRating.Rating)
 	if err != nil {
-		return models.UserBeerRating{}, fmt.Errorf("%w: %v", errorcrud.ErrCreatingData, err)
+		return nil, fmt.Errorf("%w: %v", errorcrud.ErrCreatingData, err)
 	}
-	return *userBeerRating, nil
+	return userBeerRating, nil
 }
 
-func (o *UserBeerRatingsRepository) UpdateRating(ctx context.Context, userBeerRating *models.UserBeerRating) (models.UserBeerRating, error) {
+func (o *UserBeerRatingsRepository) UpdateUserBeerRating(ctx context.Context, userBeerRating *models.UserBeerRating) (*models.UserBeerRating, error) {
 	err := o.pool.QueryRow(ctx, `
 UPDATE user_beer_ratings 
-SET users_id = $2, beers_id = $3, rating = $4 
-WHERE id = $1
-RETURNING id, users_id, beers_id, rating`, userBeerRating.ID, userBeerRating.User, userBeerRating.Beer, userBeerRating.Rating).Scan(&userBeerRating.ID, &userBeerRating.User, &userBeerRating.Beer, &userBeerRating.Rating)
+SET  rating = $3 
+WHERE beers_id = $2 and users_id = $1 
+RETURNING id, users_id, beers_id, rating`, userBeerRating.User, userBeerRating.Beer, userBeerRating.Rating).Scan(&userBeerRating.ID, &userBeerRating.User, &userBeerRating.Beer, &userBeerRating.Rating)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return models.UserBeerRating{}, fmt.Errorf("%w: %v", errorcrud.ErrUserBeerRatingNotFound, err)
+			return nil, fmt.Errorf("%w: %v", errorcrud.ErrUserBeerRatingNotFound, err)
 		}
-		return models.UserBeerRating{}, fmt.Errorf("%w: %v", errorcrud.ErrUpdatingData, err)
+		return nil, fmt.Errorf("%w: %v", errorcrud.ErrUpdatingData, err)
 	}
-	return *userBeerRating, nil
+	return userBeerRating, nil
 }
 
-func (o *UserBeerRatingsRepository) DeleteRating(ctx context.Context, id int) error {
+func (o *UserBeerRatingsRepository) DeleteUserBeerRating(ctx context.Context, id int) error {
 	_, err := o.pool.Exec(ctx, `
 DELETE FROM user_beer_ratings 
 WHERE id = $1`, id)

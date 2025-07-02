@@ -32,27 +32,27 @@ WHERE id = $1`, id).Scan(&beer.ID, &beer.Name, &beer.Brewery)
 	return &beer, nil
 }
 
-func (o *BeersRepository) AddBeer(ctx context.Context, beer *models.Beer) (models.Beer, error) {
+func (o *BeersRepository) AddBeer(ctx context.Context, beer *models.Beer) (*models.Beer, error) {
 	err := o.pool.QueryRow(ctx, `
 INSERT INTO beers (name, breweries_id) 
 VALUES ($1, $2) RETURNING id, name, breweries_id`, beer.Name, beer.Brewery).Scan(&beer.ID, &beer.Name, &beer.Brewery)
 	if err != nil {
-		return models.Beer{}, fmt.Errorf("%w: %v", errorcrud.ErrCreatingData, err)
+		return nil, fmt.Errorf("%w: %v", errorcrud.ErrCreatingData, err)
 	}
-	return *beer, nil
+	return beer, nil
 }
 
-func (o *BeersRepository) UpdateBeer(ctx context.Context, beer *models.Beer) (models.Beer, error) {
+func (o *BeersRepository) UpdateBeer(ctx context.Context, beer *models.Beer) (*models.Beer, error) {
 	err := o.pool.QueryRow(ctx, `
 UPDATE beers SET name = $1, breweries_id = $2 WHERE id = $3 
 RETURNING id, name, breweries_id`, beer.Name, beer.Brewery, beer.ID).Scan(&beer.ID, &beer.Name, &beer.Brewery)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return models.Beer{}, fmt.Errorf("%w: %v", errorcrud.ErrBeerNotFound, err)
+			return nil, fmt.Errorf("%w: %v", errorcrud.ErrBeerNotFound, err)
 		}
-		return models.Beer{}, fmt.Errorf("%w: %v", errorcrud.ErrUpdatingData, err)
+		return nil, fmt.Errorf("%w: %v", errorcrud.ErrUpdatingData, err)
 	}
-	return *beer, nil
+	return beer, nil
 }
 
 func (o *BeersRepository) DeleteBeer(ctx context.Context, id int) error {

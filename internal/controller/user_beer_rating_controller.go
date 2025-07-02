@@ -3,11 +3,9 @@ package controller
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/snyxzero/apiProject/internal/errorcrud"
-	"github.com/snyxzero/apiProject/internal/service/ratingpoints"
-	"net/http"
-
 	"github.com/snyxzero/apiProject/internal/models"
-	"github.com/snyxzero/apiProject/internal/repository"
+	"github.com/snyxzero/apiProject/internal/service"
+	"net/http"
 )
 
 type RatingRequest struct {
@@ -18,25 +16,24 @@ type RatingRequest struct {
 }
 
 type UserBeerRatingController struct {
-	repository   *repository.UserBeerRatingsRepository
-	ratingPoints *ratingpoints.RatingPoints
+	service      *service.UserBeerRatingService
+	ratingPoints *service.СalculationRatingPoints
 }
 
-func NewRatingController(repository *repository.UserBeerRatingsRepository, ratingPoints *ratingpoints.RatingPoints) *UserBeerRatingController {
+func NewUserBeerRatingController(service *service.UserBeerRatingService) *UserBeerRatingController {
 	return &UserBeerRatingController{
-		repository:   repository,
-		ratingPoints: ratingPoints,
+		service: service,
 	}
 }
 
-func (o *UserBeerRatingController) GetRating(c *gin.Context) {
+func (o *UserBeerRatingController) GetUserBeerRating(c *gin.Context) {
 	id, err := ValidID(c.Param("id"))
 	if err != nil {
 		errorcrud.ErrorCheck(c, err)
 		return
 	}
 
-	userBeerRating, err := o.repository.GetRating(c, id)
+	userBeerRating, err := o.service.GetUserBeerRating(c, id)
 	if err != nil {
 		errorcrud.ErrorCheck(c, err)
 		return
@@ -49,7 +46,7 @@ func (o *UserBeerRatingController) GetRating(c *gin.Context) {
 	return
 }
 
-func (o *UserBeerRatingController) CreateRating(c *gin.Context) {
+func (o *UserBeerRatingController) CreateUserBeerRating(c *gin.Context) {
 	var userBeerRatingRq RatingRequest
 	err := c.ShouldBindJSON(&userBeerRatingRq)
 	if err != nil {
@@ -57,13 +54,13 @@ func (o *UserBeerRatingController) CreateRating(c *gin.Context) {
 		return
 	}
 
-	userBeerRating := models.UserBeerRating{
+	userBeerRating := &models.UserBeerRating{
 		User:   userBeerRatingRq.UserID,
 		Beer:   userBeerRatingRq.BeerID,
 		Rating: userBeerRatingRq.Rating,
 	}
 
-	userBeerRating, err = o.ratingPoints.AddRatingWithTransaction(c, &userBeerRating)
+	userBeerRating, err = o.service.AddUserBeerRatingWithTransaction(c, userBeerRating)
 	if err != nil {
 		errorcrud.ErrorCheck(c, err)
 		return
@@ -76,7 +73,7 @@ func (o *UserBeerRatingController) CreateRating(c *gin.Context) {
 	return
 }
 
-func (o *UserBeerRatingController) UpdateRating(c *gin.Context) {
+func (o *UserBeerRatingController) UpdateUserBeerRating(c *gin.Context) {
 	id, err := ValidID(c.Param("id"))
 	if err != nil {
 		errorcrud.ErrorCheck(c, err)
@@ -90,14 +87,14 @@ func (o *UserBeerRatingController) UpdateRating(c *gin.Context) {
 		return
 	}
 
-	userBeerRating := models.UserBeerRating{
+	userBeerRating := &models.UserBeerRating{
 		ID:     id,
 		User:   userBeerRatingRq.UserID,
 		Beer:   userBeerRatingRq.BeerID,
 		Rating: userBeerRatingRq.Rating,
 	}
 
-	userBeerRating, err = o.repository.UpdateRating(c, &userBeerRating)
+	userBeerRating, err = o.service.UpdateUserBeerRating(c, userBeerRating)
 	if err != nil {
 		errorcrud.ErrorCheck(c, err)
 		return
@@ -110,14 +107,14 @@ func (o *UserBeerRatingController) UpdateRating(c *gin.Context) {
 	return
 }
 
-func (o *UserBeerRatingController) DeleteRating(c *gin.Context) {
+func (o *UserBeerRatingController) DeleteUserBeerRating(c *gin.Context) {
 	id, err := ValidID(c.Param("id"))
 	if err != nil {
 		errorcrud.ErrorCheck(c, err)
 		return
 	}
 
-	err = o.repository.DeleteRating(c, id)
+	err = o.service.DeleteUserBeerRating(c, id)
 	if err != nil {
 		errorcrud.ErrorCheck(c, err)
 		return

@@ -1,14 +1,12 @@
 package controller
 
 import (
+	"github.com/gin-gonic/gin"
 	"github.com/snyxzero/apiProject/internal/errorcrud"
+	"github.com/snyxzero/apiProject/internal/models"
+	"github.com/snyxzero/apiProject/internal/service"
 	"net/http"
 	"strconv"
-
-	"github.com/gin-gonic/gin"
-
-	"github.com/snyxzero/apiProject/internal/models"
-	"github.com/snyxzero/apiProject/internal/repository"
 )
 
 func ValidID(idParam string) (int, error) {
@@ -29,12 +27,12 @@ type BeerRequest struct {
 }
 
 type BeerController struct {
-	repository *repository.BeersRepository
+	service *service.BeerService
 }
 
-func NewBeerController(repository *repository.BeersRepository) *BeerController {
+func NewBeerController(service *service.BeerService) *BeerController {
 	return &BeerController{
-		repository: repository,
+		service: service,
 	}
 }
 
@@ -45,7 +43,7 @@ func (o *BeerController) GetBeer(c *gin.Context) {
 		return
 	}
 
-	beer, err := o.repository.GetBeer(c, id)
+	beer, err := o.service.GetBeer(c, id)
 	if err != nil {
 		errorcrud.ErrorCheck(c, err)
 		return
@@ -67,12 +65,12 @@ func (o *BeerController) CreateBeer(c *gin.Context) {
 		return
 	}
 
-	beer := models.Beer{
+	beer := &models.Beer{
 		Name:    beerRq.Name,
 		Brewery: beerRq.BreweriesID,
 	}
 
-	beer, err = o.repository.AddBeer(c, &beer)
+	beer, err = o.service.AddBeer(c, beer)
 	if err != nil {
 		errorcrud.ErrorCheck(c, err)
 		return
@@ -99,13 +97,13 @@ func (o *BeerController) UpdateBeer(c *gin.Context) {
 		return
 	}
 
-	beer := models.Beer{
+	beer := &models.Beer{
 		ID:      id,
 		Name:    beerRq.Name,
 		Brewery: beerRq.BreweriesID,
 	}
 
-	beer, err = o.repository.UpdateBeer(c, &beer)
+	beer, err = o.service.UpdateBeer(c, beer)
 	if err != nil {
 		errorcrud.ErrorCheck(c, err)
 		return
@@ -125,7 +123,7 @@ func (o *BeerController) DeleteBeer(c *gin.Context) {
 		return
 	}
 
-	err = o.repository.DeleteBeer(c, id)
+	err = o.service.DeleteBeer(c, id)
 	if err != nil {
 		errorcrud.ErrorCheck(c, err)
 		return
