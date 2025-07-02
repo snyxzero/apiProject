@@ -61,8 +61,8 @@ func main() {
 	}
 
 	usersBeersRatingRepo := repository.NewUserBeerRatingsRepository(db.Pool())
-	usersBeersRatingPoints := service.NewRatingPoints(usersBeersRatingRepo, usersRepo)
-	usersBeersRatingService := service.NewUserBeerRatingService(usersBeersRatingRepo, usersBeersRatingPoints)
+	usersBeersRatingPoints := service.NewRatingPoints()
+	usersBeersRatingService := service.NewUserBeerRatingService(usersBeersRatingRepo, usersRepo, usersBeersRatingPoints)
 	usersBeersRatingCtrl := controller.NewUserBeerRatingController(usersBeersRatingService)
 	// Группа маршрутов /api/usersbeersrating
 	apiUsersBeersRating := r.Group("/api/usersbeersrating")
